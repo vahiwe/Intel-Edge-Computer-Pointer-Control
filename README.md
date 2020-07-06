@@ -60,53 +60,44 @@ python3 /opt/intel/openvino/deployment_tools/open_model_zoo/tools/downloader/dow
 To run the application, use the below command. You can check the Documentation section for a description of the arguments:
 
 ```
-python3 src/main.py -fdm models/intel/face-detection-adas-binary-0001/FP32-INT1/face-detection-adas-binary-0001.xml \
-        -lmm models/intel/landmarks-regression-retail-0009/FP16-Int8/landmarks-regression-retail-0009.xml \
-        -hpm models/intel/head-pose-estimation-adas-0001/FP16-Int8/head-pose-estimation-adas-0001.xml \
+python3 main.py -fdm models/intel/face-detection-adas-binary-0001/FP32-INT1/face-detection-adas-binary-0001.xml \
+        -flm models/intel/landmarks-regression-retail-0009/FP16-Int8/landmarks-regression-retail-0009.xml \
+        -hpem models/intel/head-pose-estimation-adas-0001/FP16-Int8/head-pose-estimation-adas-0001.xml \
         -gem models/intel/gaze-estimation-adas-0002/FP16-Int8/gaze-estimation-adas-0002.xml \
-        -i bin/demo.mp4 \
-        -d CPU \
-        --print
+        -v bin/demo.mp4 \
+        -d CPU
 ```
 
 ## Documentation
 Below is a documentation of the arguments to the script:
 
 ```
-usage: main.py [-h] -fdm FDMODEL -hpm HPMODEL -lmm LMMODEL -gem GEMODEL -i
-               INPUT [-l CPU_EXTENSION] [-d DEVICE] [-pt PROB_THRESHOLD]
-               [--print] [--no_move] [--no_video]
+usage: main.py [-h] -fdm FACE_DETECTION_MODEL -flm FACIAL_LANDMARK_MODEL -gem
+               GAZE_ESTIMATION_MODEL -hpem HEAD_POSE_ESTIMATION_MODEL
+               [-d DEVICE] -v VIDEO [-l CPU_EXTENSION] [-pt THRESHOLD]
+               [--no_move] [--no_video]
 
 optional arguments:
   -h, --help            show this help message and exit
-  -fdm FDMODEL, --fdmodel FDMODEL
-                        Path to a face detection xml file with a trained
-                        model.
-  -hpm HPMODEL, --hpmodel HPMODEL
-                        Path to a head pose estimation xml file with a trained
-                        model.
-  -lmm LMMODEL, --lmmodel LMMODEL
-                        Path to a facial landmarks xml file with a trained
-                        model.
-  -gem GEMODEL, --gemodel GEMODEL
-                        Path to a gaze estimation xml file with a trained
-                        model.
-  -i INPUT, --input INPUT
-                        Path video file or CAM to use camera
+  -fdm FACE_DETECTION_MODEL, --face_detection_model FACE_DETECTION_MODEL
+                        location of face detection model model to be used
+  -flm FACIAL_LANDMARK_MODEL, --facial_landmark_model FACIAL_LANDMARK_MODEL
+                        location of facial landmark model to be used
+  -gem GAZE_ESTIMATION_MODEL, --gaze_estimation_model GAZE_ESTIMATION_MODEL
+                        location of gaze estimation model to be used
+  -hpem HEAD_POSE_ESTIMATION_MODEL, --head_pose_estimation_model HEAD_POSE_ESTIMATION_MODEL
+                        location of head pose estimation model to be used
+  -d DEVICE, --device DEVICE
+                        device to run inference
+  -v VIDEO, --video VIDEO
+                        video location
   -l CPU_EXTENSION, --cpu_extension CPU_EXTENSION
                         MKLDNN (CPU)-targeted custom layers.Absolute path to a
                         shared library with thekernels impl.
-  -d DEVICE, --device DEVICE
-                        Specify the target device to infer on: CPU, GPU, FPGA
-                        or MYRIAD is acceptable. Sample will look for a
-                        suitable plugin for device specified (CPU by default)
-  -pt PROB_THRESHOLD, --prob_threshold PROB_THRESHOLD
-                        Probability threshold for detections filtering(0.5 by
-                        default)
-  --print               Print models output on frame
+  -pt THRESHOLD, --threshold THRESHOLD
+                        Probability threshold for model
   --no_move             Not move mouse based on gaze estimation output
   --no_video            Don't show video window
-
 ```
 
 ## Benchmarks
@@ -134,6 +125,10 @@ For further improvement of the application, one can use [Deep Learning Workbench
 ### Edge Cases
 Some situations where inference may break are: 
 * `PyAutoGUI` fail-safe is triggered from mouse moving to a corner of the screen
+* `PyAutoGUI` control of the mouse was too slow, causing the frames to freeze and the application was slow
+* Application was crashing if no face was detected
 
 To solve these issues, you have to:
 * Disable PyAutoGUI fail-safe. `pyautogui.FAILSAFE = False`
+* Reduce precision and speed values of the mousecontroller to improve the speed of the application 
+* Add condition to check if face was detected

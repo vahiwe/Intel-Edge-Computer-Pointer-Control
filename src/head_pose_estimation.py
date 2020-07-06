@@ -2,11 +2,13 @@
 This is a sample class for a model. You may choose to use it as-is or make any changes to it.
 This has been provided just to give you an idea of how to structure your model class.
 '''
-from inference import Network
+import os
+import cv2
 import time
 import math
 import numpy as np
-import cv2
+from openvino.inference_engine import IECore
+
 
 class HeadPoseEstimationModel:
     '''
@@ -16,11 +18,26 @@ class HeadPoseEstimationModel:
         '''
         TODO: Use this to set your instance variables.
         '''
-        self.model = model_name
+        self.model_weights = os.path.splitext(model_name)[0] + ".bin"
+        self.model_structure = model_name
         self.device = device
-        self.network = Network()
         self.extensions = extensions
-        # raise NotImplementedError
+        self.plugin = None
+        self.network = None
+
+        try:
+            self.model = IECore().read_network(self.model_structure, self.model_weights)
+        except Exception as e:
+            raise ValueError(
+                "Could not Initialise the network. Have you enterred the correct model path?")
+
+        self.input_name = next(iter(self.model.inputs))
+        self.input_shape = self.model.inputs[self.input_name].shape
+        self.outputs = iter(self.model.outputs)
+        self.first_output_name = next(self.outputs)
+        self.second_output_name = next(self.outputs)
+        self.third_output_name = next(self.outputs)
+        self.output_shape = self.model.outputs[self.first_output_name].shape
 
     def load_model(self):
         '''
@@ -28,56 +45,61 @@ class HeadPoseEstimationModel:
         This method is for loading the model to the device specified by the user.
         If your model requires any Plugins, this is where you can load them.
         '''
-        self.network.load_model(self.model, self.device, self.extensions)
-        # raise NotImplementedError
+        self.plugin = IECore()
+        self.check_model()
+        self.network = self.plugin.load_network(self.model, self.device)
+        return
 
-    def predict(self, image):
+    def predict(self, image, face_coord, out_frame):
         '''
         TODO: You will need to complete this method.
         This method is meant for running predictions on the input image.
         '''
-        self.network.exec_net(image)
-        if self.network.wait() == 0:
-            output = self.network.get_output()
-        return output
-        # raise NotImplementedError
+        # Get Image of face from the frame using the output from face detection model
+        face = image[face_coord[1]:face_coord[3],face_coord[0]:face_coord[2]]
 
-    def check_model(self):
-        raise NotImplementedError
+        # Preprocess input by resizing it
+        frame = self.preprocess_input(face)
 
-    def preprocess_input(self, image):
-        '''
-        Before feeding the data into the model for inference,
-        you might have to preprocess it. This function is where you can do that.
-        '''
-        network_shape = self.network.get_input_shape()
-        image_p = np.copy(image)
-        image_p = cv2.resize(image_p, (network_shape[3], network_shape[2]))
-        image_p = image_p.transpose((2, 0, 1))
-        image_p = image_p.reshape(1, *image_p.shape)
-        return image_p
-
-    def preprocess_output(self, outputs, image, face, facebox, print_flag=True, threshold = 0.5):
-        '''
-        Before feeding the output of this model to the next model,
-        you might have to preprocess the output. This function is where you can do that.
-        '''
-        yaw = outputs['angle_y_fc'][0][0]   # Axis of rotation: z
-        pitch = outputs['angle_p_fc'][0][0] # Axis of rotation: y
-        roll = outputs['angle_r_fc'][0][0] # Axis of rotation: x
+        start_time = time.time()
+        # Run inference on the processed input
+        self.network.start_async(request_id=0, inputs={self.input_name: frame})
         
-        #Draw output
-        if(print_flag):
-            cv2.putText(image,"y:{:.1f}".format(yaw), (20,20), 0, 0.6, (255,255,0))
-            cv2.putText(image,"p:{:.1f}".format(pitch), (20,40), 0, 0.6, (255,255,0))
-            cv2.putText(image,"r:{:.1f}".format(roll), (20,60), 0, 0.6, (255,255,0))
+        # get inference time
+        inference_time = time.time() - start_time
+
+        # Retrieve output from the inference engine
+        if self.network.requests[0].wait(-1) == 0:
+            output = self.network.requests[0].outputs
             
-            xmin, ymin,_ , _ = facebox
-            face_center = (xmin + face.shape[1] / 2, ymin + face.shape[0] / 2, 0)
-            self.draw_axes(image, face_center, yaw, pitch, roll)
+        # Get the head pose angles from the output
+        angles = self.preprocess_output(output)
+
+        # Write the angles on the frame and visualize the angles
+        out_frame = self.draw_outputs(angles, out_frame, face_coord)
+
+        # Return updated image and head pose angles 
+        return out_frame, angles, inference_time
+
+    def draw_outputs(self, angles, image, face_coord):
+        # Create a copy of image
+        frame_out = image.copy()
+
+        # write the yaw, pitch and roll to the frame as text
+        cv2.putText(frame_out,"yaw:{:.1f}".format(angles[0]), (20,20), 0, 0.6, (255,255,0))
+        cv2.putText(frame_out,"pitch:{:.1f}".format(angles[1]), (20,40), 0, 0.6, (255,255,0))
+        cv2.putText(frame_out,"roll:{:.1f}".format(angles[2]), (20,60), 0, 0.6, (255,255,0))
         
-        return image, [yaw, pitch, roll]
-    
+        # visualize head pose 
+        xmin, ymin, xmax , ymax = face_coord
+        height = xmax - xmin 
+        width = ymax - ymin
+        face_center = (xmin + height / 2, ymin + width / 2, 0)
+        self.draw_axes(frame_out, face_center, angles[0], angles[1], angles[2])
+
+        # Return updated image
+        return frame_out
+
     # code source: https://knowledge.udacity.com/questions/171017
     def draw_axes(self, frame, center_of_face, yaw, pitch, roll):
         focal_length = 950.0
@@ -142,3 +164,44 @@ class HeadPoseEstimationModel:
         camera_matrix[1][2] = cy
         camera_matrix[2][2] = 1
         return camera_matrix
+    
+    def check_model(self):
+        ### TODO check if all layers are supported
+        ### return True if all supported, False otherwise
+        layers_supported = self.plugin.query_network(self.model, device_name='CPU')
+        layers = self.model.layers.keys()
+
+        all_supported = True
+        for l in layers:
+            if l not in layers_supported:
+                all_supported = False
+
+        if not all_supported:
+            ### TODO: Add any necessary extensions ###
+            self.plugin.add_extension(self.extensions, self.device)
+
+    def preprocess_input(self, image):
+        '''
+        Before feeding the data into the model for inference,
+        you might have to preprocess it. This function is where you can do that.
+        '''
+        # Resize image to fit input requirements of the model
+        image = cv2.resize(image, (self.input_shape[3], self.input_shape[2]))
+        image_p = image.transpose((2, 0, 1))
+        image_p = image_p.reshape(1, *image_p.shape)
+        return image_p
+
+    def preprocess_output(self, outputs):
+        '''
+        Before feeding the output of this model to the next model,
+        you might have to preprocess the output. This function is where you can do that.
+        '''
+        # Retrieve head pose angles (yaw, pitch and roll) from the output
+        angles = []
+        angles.append(outputs['angle_y_fc'][0][0])
+        angles.append(outputs['angle_p_fc'][0][0])
+        angles.append(outputs['angle_r_fc'][0][0])
+        
+        # Return angles
+        return angles
+    
