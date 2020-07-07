@@ -29,14 +29,17 @@ from src.head_pose_estimation import HeadPoseEstimationModel
 from src.gaze_estimation import GazeEstimationModel
 from src.mouse_controller import MouseController
 
+# code source: https://github.com/vahiwe/Intel_Edge_Smart_Queuing_System/blob/master/Create_Python_Script.ipynb
 def main(args):
     """
     Initialize the inference network, stream video to network,
     and output stats and video.
     """
+    print("<<<<<<<<<<<<<<< Application is running >>>>>>>>>>>>>>>>")
     # Initialise the mouse controller class
     mc = MouseController("higher", "faster")
 
+    # code source: https://github.com/vahiwe/Intel_Edge_Smart_Queuing_System/blob/master/Create_Python_Script.ipynb
     # Initialise models instance and video input
     face_detection_model = FaceDetectionModel(args.face_detection_model)
     facial_landmark_model = FacialLandmarkDetectionModel(args.facial_landmark_model)
@@ -44,37 +47,36 @@ def main(args):
     gaze_estimation_model = GazeEstimationModel(args.gaze_estimation_model)
     video_file = args.video
 
-    ### Load the models ###
-
     # Start time for loading models
     model_load_start_time = time.time()
-
-    print("============== Models Load time ===============") 
 
     # Calculate model load time for face detection model
     start_time = time.time()
     face_detection_model.load_model()
-    print("Face Detection Model: {:.1f}ms".format(1000 * (time.time() - start_time)) )
+    # Convert the time from seconds to milliseconds(ms) and round to 1 decimal place
+    face_detection_model_load_time = round((1000 * (time.time() - start_time)), 1)
 
     # Calculate model load time for facial landmark detection model
     start_time = time.time()
     facial_landmark_model.load_model()
-    print("Facial Landmarks Detection Model: {:.1f}ms".format(1000 * (time.time() - start_time)) )
-
+    # Convert the time from seconds to milliseconds(ms) and round to 1 decimal place
+    facial_landmark_model_load_time = round((1000 * (time.time() - start_time)), 1)
+    
     # Calculate model load time for head pose model
     start_time = time.time()
     head_pose_model.load_model()
-    print("Headpose Estimation Model: {:.1f}ms".format(1000 * (time.time() - start_time)) )
-
+    # Convert the time from seconds to milliseconds(ms) and round to 1 decimal place
+    head_pose_model_load_time = round((1000 * (time.time() - start_time)), 1)
+    
     # Calculate model load time for gaze estimation model
     start_time = time.time()
     gaze_estimation_model.load_model()
-    print("Gaze Estimation Model: {:.1f}ms".format(1000 * (time.time() - start_time)) )
-
-    # Calculate total models load time
-    print("Total model load time: {:.1f}ms".format(1000 * (time.time() - model_load_start_time)) )
+    # Convert the time from seconds to milliseconds(ms) and round to 1 decimal place
+    gaze_estimation_model_load_time = round((1000 * (time.time() - start_time)), 1)
     
-    print("==============  End =====================") 
+    # Calculate total models load time
+    # Convert the time from seconds to milliseconds(ms) and round to 1 decimal place
+    total_model_load_time = round((1000 * (time.time() - model_load_start_time)), 1)
     
     # Checks for live feed
     if video_file == 'CAM':
@@ -90,6 +92,7 @@ def main(args):
         assert os.path.isfile(video_file), "Specified input file doesn't exist"
         single_image_mode = False
 
+    # code source: https://github.com/vahiwe/Intel_Edge_Smart_Queuing_System/blob/master/Create_Python_Script.ipynb
     try:
         cap=cv2.VideoCapture(input_stream)
     except FileNotFoundError:
@@ -100,13 +103,15 @@ def main(args):
     if input_stream:
         cap.open(input_stream)
 
+    # code source: https://github.com/vahiwe/Intel_Edge_Smart_Queuing_System/blob/master/Create_Python_Script.ipynb
     no_of_frames=0
-    face_detectiom_inference_time = 0
+    face_detection_inference_time = 0
     facial_landmark_inference_time = 0
     head_pose_inference_time = 0
     gaze_estimation_inference_time = 0
     start_inference_time = time.time()
 
+    # code source: https://github.com/vahiwe/Intel_Edge_Smart_Queuing_System/blob/master/Create_Python_Script.ipynb
     try:
         # loop until stream is over
         while cap.isOpened:
@@ -118,66 +123,72 @@ def main(args):
             key_pressed = cv2.waitKey(60)
             no_of_frames += 1
             
-            # face detection
+            # face detection inference
             face_coord, out_frame, inference_time = face_detection_model.predict(frame) 
 
             # Check if face was detected or not
+            # This was added to prevent application from crashing if face is detected
+            # This bug was found while using PC camera as input
             if len(face_coord) == 0:
                 continue  
             
             # calculate total inference time of face detection model
-            face_detectiom_inference_time += inference_time
+            face_detection_inference_time += inference_time
 
-            # get face landmarks
+            # face landmarks inference
             out_frame,left_eye_image,right_eye_image, eye_coord, inference_time = facial_landmark_model.predict(frame, face_coord, out_frame)
             
             # calculate total inference time of facial landmarks model
             facial_landmark_inference_time += inference_time
 
-            # get head pose estimation
+            # head pose estimation inference
             out_frame, headpose_angles, inference_time = head_pose_model.predict(frame, face_coord, out_frame)
             
             # calculate total inference time of head pose estimation model
             head_pose_inference_time += inference_time
 
-            # get gaze estimation
+            # gaze estimation inference
             out_frame, gaze_vector, inference_time  = gaze_estimation_model.predict(left_eye_image, right_eye_image, headpose_angles, eye_coord, out_frame)
             
             # calculate total inference time of gaze estimation model
             gaze_estimation_inference_time += inference_time
 
-            if(not args.no_video):
-                if single_image_mode:
-                    cv2.imwrite('output_image.jpg', out_frame)
-                else:
-                    cv2.imshow('Mouse Pointer Control', out_frame)
-                    if cv2.waitKey(1) & 0xFF == ord('q'):
-                        break
+            # Save image if image file was the input or show frames if video is input
+            if single_image_mode:
+                cv2.imwrite('output_image.jpg', out_frame)
+            else:
+                cv2.imshow('Mouse Pointer Control', out_frame)
+                if cv2.waitKey(1) & 0xFF == ord('q'):
+                    break
             
-            if(not args.no_move):
-                mc.move(gaze_vector[0],gaze_vector[1])
+            # Move cursor based on gaze inference output
+            mc.move(gaze_vector[0],gaze_vector[1])
         
             # Break if escape key pressed
             if key_pressed == 27:
                 break
 
-
-        print("\n Number of frames: {} \n".format(no_of_frames))
-        print("============== Inference Time ===============") 
-        print("Face Detection Inference Time:{:.1f}ms".format(1000* face_detectiom_inference_time/no_of_frames))
-        print("Facial Landmarks Detection Inference Time:{:.1f}ms".format(1000* facial_landmark_inference_time/no_of_frames))
-        print("Headpose Estimation Inference Time:{:.1f}ms".format(1000* head_pose_inference_time/no_of_frames))
-        print("Gaze Estimation Inference Time:{:.1f}ms".format(1000* gaze_estimation_inference_time/no_of_frames))
-        print("Total time:{:.1f}s".format(round((time.time() - start_inference_time), 1)))
-        print("============== End ===============================") 
-
+        # code source: https://github.com/vahiwe/Intel_Edge_Smart_Queuing_System/blob/master/Create_Python_Script.ipynb
+        # Print out statistics such as model load time and inference time of the different models
+        print(f"Face Detection Model Load Time: {face_detection_model_load_time}ms")
+        print(f"Facial Landmarks Detection Model Load Time: {facial_landmark_model_load_time}ms")
+        print(f"Head Pose Estimation Model Load Time: {head_pose_model_load_time}ms")
+        print(f"Gaze Estimation Model Load Time: {gaze_estimation_model_load_time}ms")
+        print(f"Total Model Load Time: {total_model_load_time}ms")
+        print(f"\n Number of frames: {no_of_frames} \n")
+        print(f"Face Detection Inference Time:{round((1000* face_detection_inference_time/no_of_frames),1)}ms")
+        print(f"Facial Landmarks Detection Inference Time:{round((1000* facial_landmark_inference_time/no_of_frames),1)}ms")
+        print(f"Headpose Estimation Inference Time:{round((1000* head_pose_inference_time/no_of_frames),1)}ms")
+        print(f"Gaze Estimation Inference Time:{round((1000* gaze_estimation_inference_time/no_of_frames),1)}ms")
+        print(f"Total time:{round((time.time() - start_inference_time), 1)}s")
+        
         # Release the capture and destroy any OpenCV windows
         cap.release()
         cv2.destroyAllWindows()
     except Exception as e:
         print("Could not run inference: ", e)
     
-
+# code source: https://github.com/vahiwe/Intel_Edge_Smart_Queuing_System/blob/master/Create_Python_Script.ipynb
 if __name__ == '__main__':
     # Parse command line arguments
     parser = ArgumentParser()
@@ -191,10 +202,6 @@ if __name__ == '__main__':
                              "Absolute path to a shared library with the"
                              "kernels impl.")
     parser.add_argument("-pt", '--threshold', type=float, default=0.60, help="Probability threshold for model")
-    parser.add_argument("--no_move",default=False,
-                        help="Not move mouse based on gaze estimation output",action="store_true")
-    parser.add_argument("--no_video",default=False,
-                        help="Don't show video window",action="store_true")
 
     args=parser.parse_args()
 

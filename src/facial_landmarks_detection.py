@@ -11,6 +11,7 @@ class FacialLandmarkDetectionModel:
     '''
     Class for the Facial Landmark Detection Model.
     '''
+    # code source: https://github.com/vahiwe/Intel_Edge_Smart_Queuing_System/blob/master/Create_Python_Script.ipynb
     def __init__(self, model_name, device='CPU', extensions=None):
         '''
         TODO: Use this to set your instance variables.
@@ -33,6 +34,7 @@ class FacialLandmarkDetectionModel:
         self.output_name = next(iter(self.model.outputs))
         self.output_shape = self.model.outputs[self.output_name].shape
 
+    # code source: https://github.com/vahiwe/Intel_Edge_Smart_Queuing_System/blob/master/Create_Python_Script.ipynb
     def load_model(self):
         '''
         TODO: You will need to complete this method.
@@ -44,6 +46,7 @@ class FacialLandmarkDetectionModel:
         self.network = self.plugin.load_network(self.model, self.device)
         return
 
+    # code source: https://github.com/vahiwe/Intel_Edge_Smart_Queuing_System/blob/master/Create_Python_Script.ipynb
     def predict(self, image, face_coord, out_frame):
         '''
         TODO: You will need to complete this method.
@@ -79,6 +82,7 @@ class FacialLandmarkDetectionModel:
         # Return updated image, image of left eye, image of right eye and eye coordinates
         return out_frame, left_eye_image, right_eye_image, eye_coord, inference_time
 
+    # code source: https://github.com/baafw/openvino-eye-gaze-estimation
     def draw_outputs(self, outputs, image, face_coord, left_eye_image, right_eye_image):
         # Create a copy of image
         frame_out = image.copy()
@@ -102,6 +106,7 @@ class FacialLandmarkDetectionModel:
         # Return updated image
         return frame_out
 
+    # code source: https://github.com/vahiwe/Intel_Edge_People_Counter_Project/blob/master/inference.py
     def check_model(self):
         ### TODO check if all layers are supported
         ### return True if all supported, False otherwise
@@ -117,6 +122,8 @@ class FacialLandmarkDetectionModel:
             ### TODO: Add any necessary extensions ###
             self.plugin.add_extension(self.extensions, self.device)
 
+    # code source: https://github.com/vahiwe/Intel_Edge_Smart_Queuing_System/blob/master/Create_Python_Script.ipynb
+    # code source: https://docs.openvinotoolkit.org/latest/_models_intel_landmarks_regression_retail_0009_description_landmarks_regression_retail_0009.html
     def preprocess_input(self, image):
         '''
         Before feeding the data into the model for inference,
@@ -128,6 +135,8 @@ class FacialLandmarkDetectionModel:
         image_p = image_p.reshape(1, *image_p.shape)
         return image_p
 
+    # code source: https://github.com/baafw/openvino-eye-gaze-estimation
+    # code source: https://docs.openvinotoolkit.org/latest/_models_intel_landmarks_regression_retail_0009_description_landmarks_regression_retail_0009.html
     def preprocess_output(self, outputs, face_coord, face):
         '''
         Before feeding the output of this model to the next model,

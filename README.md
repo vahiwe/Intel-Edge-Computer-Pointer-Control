@@ -96,8 +96,6 @@ optional arguments:
                         shared library with thekernels impl.
   -pt THRESHOLD, --threshold THRESHOLD
                         Probability threshold for model
-  --no_move             Not move mouse based on gaze estimation output
-  --no_video            Don't show video window
 ```
 
 ## Benchmarks
@@ -132,3 +130,15 @@ To solve these issues, you have to:
 * Disable PyAutoGUI fail-safe. `pyautogui.FAILSAFE = False`
 * Reduce precision and speed values of the mousecontroller to improve the speed of the application 
 * Add condition to check if face was detected
+
+### References
+Here are refences to code sources that was used in this project: 
+* https://github.com/vahiwe/Intel_Edge_People_Counter_Project/blob/master/inference.py
+* https://github.com/vahiwe/Intel_Edge_Smart_Queuing_System/blob/master/Create_Python_Script.ipynb
+* https://knowledge.udacity.com/questions/171017
+* https://knowledge.udacity.com/questions/257811
+* https://github.com/baafw/openvino-eye-gaze-estimation
+* https://docs.openvinotoolkit.org/latest/_models_intel_head_pose_estimation_adas_0001_description_head_pose_estimation_adas_0001.html
+* https://docs.openvinotoolkit.org/latest/_models_intel_gaze_estimation_adas_0002_description_gaze_estimation_adas_0002.html
+* https://docs.openvinotoolkit.org/latest/_models_intel_face_detection_adas_binary_0001_description_face_detection_adas_binary_0001.html
+* https://docs.openvinotoolkit.org/latest/_models_intel_landmarks_regression_retail_0009_description_landmarks_regression_retail_0009.html

@@ -14,6 +14,7 @@ class HeadPoseEstimationModel:
     '''
     Class for the Head Pose Estimation Model.
     '''
+    # code source: https://github.com/vahiwe/Intel_Edge_Smart_Queuing_System/blob/master/Create_Python_Script.ipynb
     def __init__(self, model_name, device='CPU', extensions=None):
         '''
         TODO: Use this to set your instance variables.
@@ -39,6 +40,7 @@ class HeadPoseEstimationModel:
         self.third_output_name = next(self.outputs)
         self.output_shape = self.model.outputs[self.first_output_name].shape
 
+    # code source: https://github.com/vahiwe/Intel_Edge_Smart_Queuing_System/blob/master/Create_Python_Script.ipynb
     def load_model(self):
         '''
         TODO: You will need to complete this method.
@@ -50,6 +52,7 @@ class HeadPoseEstimationModel:
         self.network = self.plugin.load_network(self.model, self.device)
         return
 
+    # code source: https://github.com/vahiwe/Intel_Edge_Smart_Queuing_System/blob/master/Create_Python_Script.ipynb
     def predict(self, image, face_coord, out_frame):
         '''
         TODO: You will need to complete this method.
@@ -81,6 +84,7 @@ class HeadPoseEstimationModel:
         # Return updated image and head pose angles 
         return out_frame, angles, inference_time
 
+    # code source: https://knowledge.udacity.com/questions/171017
     def draw_outputs(self, angles, image, face_coord):
         # Create a copy of image
         frame_out = image.copy()
@@ -165,6 +169,7 @@ class HeadPoseEstimationModel:
         camera_matrix[2][2] = 1
         return camera_matrix
     
+    # code source: https://github.com/vahiwe/Intel_Edge_People_Counter_Project/blob/master/inference.py
     def check_model(self):
         ### TODO check if all layers are supported
         ### return True if all supported, False otherwise
@@ -180,6 +185,8 @@ class HeadPoseEstimationModel:
             ### TODO: Add any necessary extensions ###
             self.plugin.add_extension(self.extensions, self.device)
 
+    # code source: https://github.com/vahiwe/Intel_Edge_Smart_Queuing_System/blob/master/Create_Python_Script.ipynb
+    # code source: https://docs.openvinotoolkit.org/latest/_models_intel_head_pose_estimation_adas_0001_description_head_pose_estimation_adas_0001.html
     def preprocess_input(self, image):
         '''
         Before feeding the data into the model for inference,
@@ -191,6 +198,7 @@ class HeadPoseEstimationModel:
         image_p = image_p.reshape(1, *image_p.shape)
         return image_p
 
+    # code source: https://docs.openvinotoolkit.org/latest/_models_intel_head_pose_estimation_adas_0001_description_head_pose_estimation_adas_0001.html
     def preprocess_output(self, outputs):
         '''
         Before feeding the output of this model to the next model,

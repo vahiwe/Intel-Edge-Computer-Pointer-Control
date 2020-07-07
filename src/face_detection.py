@@ -12,6 +12,7 @@ class FaceDetectionModel:
     '''
     Class for the Face Detection Model.
     '''
+    # code source: https://github.com/vahiwe/Intel_Edge_Smart_Queuing_System/blob/master/Create_Python_Script.ipynb
     def __init__(self, model_name, threshold = 0.5, device='CPU', extensions=None):
         '''
         TODO: Use this to set your instance variables.
@@ -35,6 +36,7 @@ class FaceDetectionModel:
         self.output_name = next(iter(self.model.outputs))
         self.output_shape = self.model.outputs[self.output_name].shape
 
+    # code source: https://github.com/vahiwe/Intel_Edge_Smart_Queuing_System/blob/master/Create_Python_Script.ipynb
     def load_model(self):
         '''
         TODO: You will need to complete this method.
@@ -46,6 +48,7 @@ class FaceDetectionModel:
         self.network = self.plugin.load_network(self.model, self.device)
         return
 
+    # code source: https://github.com/vahiwe/Intel_Edge_Smart_Queuing_System/blob/master/Create_Python_Script.ipynb
     def predict(self, image):
         '''
         TODO: You will need to complete this method.
@@ -81,6 +84,7 @@ class FaceDetectionModel:
         # Return face coordinates and updated image 
         return face_coord, image, inference_time
 
+    # code source: https://github.com/vahiwe/Intel_Edge_Smart_Queuing_System/blob/master/Create_Python_Script.ipynb
     def draw_outputs(self, face_coord, image):
         # Create a copy of image
         frame_out = image.copy()
@@ -91,6 +95,7 @@ class FaceDetectionModel:
         # Return updated image
         return frame_out
 
+    # code source: https://github.com/vahiwe/Intel_Edge_People_Counter_Project/blob/master/inference.py
     def check_model(self):
         ### TODO check if all layers are supported
         ### return True if all supported, False otherwise
@@ -106,6 +111,8 @@ class FaceDetectionModel:
             ### TODO: Add any necessary extensions ###
             self.plugin.add_extension(self.extensions, self.device)
 
+    # code source: https://github.com/vahiwe/Intel_Edge_Smart_Queuing_System/blob/master/Create_Python_Script.ipynb
+    # code source: https://docs.openvinotoolkit.org/latest/_models_intel_face_detection_adas_binary_0001_description_face_detection_adas_binary_0001.html
     def preprocess_input(self, image):
         '''
         Before feeding the data into the model for inference,
@@ -117,6 +124,8 @@ class FaceDetectionModel:
         image_p = image_p.reshape(1, *image_p.shape)
         return image_p
 
+    # code source: https://github.com/vahiwe/Intel_Edge_Smart_Queuing_System/blob/master/Create_Python_Script.ipynb
+    # code source: https://docs.openvinotoolkit.org/latest/_models_intel_face_detection_adas_binary_0001_description_face_detection_adas_binary_0001.html
     def preprocess_output(self, outputs, image):
         '''
         Before feeding the output of this model to the next model,

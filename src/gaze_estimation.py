@@ -12,6 +12,7 @@ class GazeEstimationModel:
     '''
     Class for the Gaze Estimation Model.
     '''
+    # code source: https://github.com/vahiwe/Intel_Edge_Smart_Queuing_System/blob/master/Create_Python_Script.ipynb
     def __init__(self, model_name, device='CPU', extensions=None):
         '''
         TODO: Use this to set your instance variables.
@@ -34,6 +35,7 @@ class GazeEstimationModel:
         self.output_name = next(iter(self.model.outputs))
         self.output_shape = self.model.outputs[self.output_name].shape
 
+    # code source: https://github.com/vahiwe/Intel_Edge_Smart_Queuing_System/blob/master/Create_Python_Script.ipynb
     def load_model(self):
         '''
         TODO: You will need to complete this method.
@@ -45,6 +47,7 @@ class GazeEstimationModel:
         self.network = self.plugin.load_network(self.model, self.device)
         return
 
+    # code source: https://github.com/vahiwe/Intel_Edge_Smart_Queuing_System/blob/master/Create_Python_Script.ipynb
     def predict(self, left_eye_image, right_eye_image, headpose_angles, eye_coord, out_frame):
         '''
         TODO: You will need to complete this method.
@@ -73,6 +76,8 @@ class GazeEstimationModel:
         # Return updated image, mouse coordinates and gaze vector
         return out_frame, gaze_vector, inference_time
     
+    # code source: https://knowledge.udacity.com/questions/257811
+    # code source: https://docs.openvinotoolkit.org/latest/_models_intel_gaze_estimation_adas_0002_description_gaze_estimation_adas_0002.html
     def draw_outputs(self, gaze_vector, image, eye_coord):
         # Create a copy of image
         frame_out = image.copy()
@@ -87,6 +92,7 @@ class GazeEstimationModel:
         # Return updated image
         return frame_out
 
+    # code source: https://github.com/vahiwe/Intel_Edge_People_Counter_Project/blob/master/inference.py
     def check_model(self):
         ### TODO check if all layers are supported
         ### return True if all supported, False otherwise
@@ -102,6 +108,7 @@ class GazeEstimationModel:
             ### TODO: Add any necessary extensions ###
             self.plugin.add_extension(self.extensions, self.device)
 
+    # code source: https://github.com/vahiwe/Intel_Edge_Smart_Queuing_System/blob/master/Create_Python_Script.ipynb
     def preprocess_input(self, left_eye_image, right_eye_image):
         '''
         Before feeding the data into the model for inference,
@@ -118,7 +125,7 @@ class GazeEstimationModel:
 
         return left_eye_frame, right_eye_frame
 
-
+    # code source: https://docs.openvinotoolkit.org/latest/_models_intel_gaze_estimation_adas_0002_description_gaze_estimation_adas_0002.html
     def preprocess_output(self, outputs):
         '''
         Before feeding the output of this model to the next model,
