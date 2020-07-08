@@ -68,6 +68,8 @@ python3 main.py -fdm models/intel/face-detection-adas-binary-0001/FP32-INT1/face
         -d CPU
 ```
 
+* Logs are available at `logs.txt`.
+
 ## Documentation
 Below is a documentation of the arguments to the script:
 
@@ -119,6 +121,10 @@ The table below shows the load time and inference time for the different models 
 
 ## Stand Out Suggestions
 For further improvement of the application, one can use [Deep Learning Workbench](https://docs.openvinotoolkit.org/latest/_docs_Workbench_DG_Install_from_Package.html) to get model performance summary, and [VTune Amplifier](https://software.intel.com/content/www/us/en/develop/tools/vtune-profiler.html) to measure hot spots in the application code
+
+* Run this command to view line profiling outputs of the application to check for hotspots:
+
+__`❍ python3 -m line_profiler file_name.py.lprof `__
 
 ### Edge Cases
 Some situations where inference may break are: 

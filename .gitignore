@@ -36,6 +36,7 @@ logs.txt
 *.manifest
 *.spec
 .DS_Store
+*.py.lprof
 
 # Installer logs
 pip-log.txt

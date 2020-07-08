@@ -6,9 +6,17 @@ import os
 import cv2
 import time
 import math
+import atexit
+import line_profiler
 import numpy as np
 from openvino.inference_engine import IECore
+profile=line_profiler.LineProfiler()
+# this prints the profiling stats to sys.stdout
+# atexit.register(profile.print_stats)
 
+
+# this saves the profiling stats to a file
+atexit.register(profile.dump_stats, "head_pose_estimation.py.lprof")
 
 class HeadPoseEstimationModel:
     '''
@@ -41,6 +49,7 @@ class HeadPoseEstimationModel:
         self.output_shape = self.model.outputs[self.first_output_name].shape
 
     # code source: https://github.com/vahiwe/Intel_Edge_Smart_Queuing_System/blob/master/Create_Python_Script.ipynb
+    @profile
     def load_model(self):
         '''
         TODO: You will need to complete this method.
@@ -53,6 +62,7 @@ class HeadPoseEstimationModel:
         return
 
     # code source: https://github.com/vahiwe/Intel_Edge_Smart_Queuing_System/blob/master/Create_Python_Script.ipynb
+    @profile
     def predict(self, image, face_coord, out_frame):
         '''
         TODO: You will need to complete this method.
@@ -85,6 +95,7 @@ class HeadPoseEstimationModel:
         return out_frame, angles, inference_time
 
     # code source: https://knowledge.udacity.com/questions/171017
+    @profile
     def draw_outputs(self, angles, image, face_coord):
         # Create a copy of image
         frame_out = image.copy()
@@ -105,6 +116,7 @@ class HeadPoseEstimationModel:
         return frame_out
 
     # code source: https://knowledge.udacity.com/questions/171017
+    @profile
     def draw_axes(self, frame, center_of_face, yaw, pitch, roll):
         focal_length = 950.0
         scale = 50
@@ -158,6 +170,7 @@ class HeadPoseEstimationModel:
         return frame
 
     # code source: https://knowledge.udacity.com/questions/171017
+    @profile
     def build_camera_matrix(self, center_of_face, focal_length):
         cx = int(center_of_face[0])
         cy = int(center_of_face[1])
@@ -170,6 +183,7 @@ class HeadPoseEstimationModel:
         return camera_matrix
     
     # code source: https://github.com/vahiwe/Intel_Edge_People_Counter_Project/blob/master/inference.py
+    @profile
     def check_model(self):
         ### TODO check if all layers are supported
         ### return True if all supported, False otherwise
@@ -187,6 +201,7 @@ class HeadPoseEstimationModel:
 
     # code source: https://github.com/vahiwe/Intel_Edge_Smart_Queuing_System/blob/master/Create_Python_Script.ipynb
     # code source: https://docs.openvinotoolkit.org/latest/_models_intel_head_pose_estimation_adas_0001_description_head_pose_estimation_adas_0001.html
+    @profile
     def preprocess_input(self, image):
         '''
         Before feeding the data into the model for inference,
@@ -199,6 +214,7 @@ class HeadPoseEstimationModel:
         return image_p
 
     # code source: https://docs.openvinotoolkit.org/latest/_models_intel_head_pose_estimation_adas_0001_description_head_pose_estimation_adas_0001.html
+    @profile
     def preprocess_output(self, outputs):
         '''
         Before feeding the output of this model to the next model,

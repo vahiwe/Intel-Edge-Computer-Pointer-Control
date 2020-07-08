@@ -22,12 +22,21 @@
 import os
 import time
 import cv2
+import atexit
+import line_profiler
 from argparse import ArgumentParser
 from src.face_detection import FaceDetectionModel
 from src.facial_landmarks_detection import FacialLandmarkDetectionModel
 from src.head_pose_estimation import HeadPoseEstimationModel
 from src.gaze_estimation import GazeEstimationModel
 from src.mouse_controller import MouseController
+profile=line_profiler.LineProfiler()
+# this prints the profiling stats to sys.stdout
+# atexit.register(profile.print_stats)
+
+
+# this saves the profiling stats to a file
+atexit.register(profile.dump_stats, "main.py.lprof")
 
 # code source: https://github.com/vahiwe/Intel_Edge_Smart_Queuing_System/blob/master/Create_Python_Script.ipynb
 def main(args):
@@ -185,6 +194,7 @@ def main(args):
         
         print("<<<<<<<<<<<<<<< Application has finished running >>>>>>>>>>>>>>>>")
         print("<<<<<<<<<<<<<<< Check logs.txt for statistics logs >>>>>>>>>>>>>>>>")
+        print("<<<<< To check profiling stats for hotspot, type this command `python3 -m line_profiler file_name.py.lprof` for any of the profile outputs >>>>>")
 
         # Release the capture and destroy any OpenCV windows
         cap.release()
