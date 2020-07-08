@@ -10,6 +10,7 @@ import atexit
 import line_profiler
 import numpy as np
 from openvino.inference_engine import IECore
+# code source: https://github.com/vahiwe/Intel_Edge_Optimization_Exercises/blob/master/profiling.py
 profile=line_profiler.LineProfiler()
 # this prints the profiling stats to sys.stdout
 # atexit.register(profile.print_stats)

@@ -144,6 +144,7 @@ Here are refences to code sources that was used in this project:
 * https://knowledge.udacity.com/questions/171017
 * https://knowledge.udacity.com/questions/257811
 * https://github.com/baafw/openvino-eye-gaze-estimation
+* https://github.com/vahiwe/Intel_Edge_Optimization_Exercises/blob/master/profiling.py
 * https://docs.openvinotoolkit.org/latest/_models_intel_head_pose_estimation_adas_0001_description_head_pose_estimation_adas_0001.html
 * https://docs.openvinotoolkit.org/latest/_models_intel_gaze_estimation_adas_0002_description_gaze_estimation_adas_0002.html
 * https://docs.openvinotoolkit.org/latest/_models_intel_face_detection_adas_binary_0001_description_face_detection_adas_binary_0001.html

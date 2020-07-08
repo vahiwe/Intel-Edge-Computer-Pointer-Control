@@ -30,6 +30,7 @@ from src.facial_landmarks_detection import FacialLandmarkDetectionModel
 from src.head_pose_estimation import HeadPoseEstimationModel
 from src.gaze_estimation import GazeEstimationModel
 from src.mouse_controller import MouseController
+# code source: https://github.com/vahiwe/Intel_Edge_Optimization_Exercises/blob/master/profiling.py
 profile=line_profiler.LineProfiler()
 # this prints the profiling stats to sys.stdout
 # atexit.register(profile.print_stats)
