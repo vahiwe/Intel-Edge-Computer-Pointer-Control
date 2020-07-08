@@ -28,6 +28,7 @@ share/python-wheels/
 MANIFEST
 .vscode/
 models/
+logs.txt
 
 # PyInstaller
 #  Usually these files are written by a python script from a template

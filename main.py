@@ -37,7 +37,7 @@ def main(args):
     """
     print("<<<<<<<<<<<<<<< Application is running >>>>>>>>>>>>>>>>")
     # Initialise the mouse controller class
-    mc = MouseController("higher", "faster")
+    mouse_controller = MouseController("higher", "faster")
 
     # code source: https://github.com/vahiwe/Intel_Edge_Smart_Queuing_System/blob/master/Create_Python_Script.ipynb
     # Initialise models instance and video input
@@ -162,26 +162,30 @@ def main(args):
                     break
             
             # Move cursor based on gaze inference output
-            mc.move(gaze_vector[0],gaze_vector[1])
+            mouse_controller.move(gaze_vector[0],gaze_vector[1])
         
             # Break if escape key pressed
             if key_pressed == 27:
                 break
 
         # code source: https://github.com/vahiwe/Intel_Edge_Smart_Queuing_System/blob/master/Create_Python_Script.ipynb
-        # Print out statistics such as model load time and inference time of the different models
-        print(f"Face Detection Model Load Time: {face_detection_model_load_time}ms")
-        print(f"Facial Landmarks Detection Model Load Time: {facial_landmark_model_load_time}ms")
-        print(f"Head Pose Estimation Model Load Time: {head_pose_model_load_time}ms")
-        print(f"Gaze Estimation Model Load Time: {gaze_estimation_model_load_time}ms")
-        print(f"Total Model Load Time: {total_model_load_time}ms")
-        print(f"\n Number of frames: {no_of_frames} \n")
-        print(f"Face Detection Inference Time:{round((1000* face_detection_inference_time/no_of_frames),1)}ms")
-        print(f"Facial Landmarks Detection Inference Time:{round((1000* facial_landmark_inference_time/no_of_frames),1)}ms")
-        print(f"Headpose Estimation Inference Time:{round((1000* head_pose_inference_time/no_of_frames),1)}ms")
-        print(f"Gaze Estimation Inference Time:{round((1000* gaze_estimation_inference_time/no_of_frames),1)}ms")
-        print(f"Total time:{round((time.time() - start_inference_time), 1)}s")
+        # Log statistics such as model load time and inference time of the different models in logs.txt
+        with open("logs.txt", "w") as log:
+            log.write(f"Face Detection Model Load Time: {face_detection_model_load_time}ms\n")
+            log.write(f"Facial Landmarks Detection Model Load Time: {facial_landmark_model_load_time}ms\n")
+            log.write(f"Head Pose Estimation Model Load Time: {head_pose_model_load_time}ms\n")
+            log.write(f"Gaze Estimation Model Load Time: {gaze_estimation_model_load_time}ms\n")
+            log.write(f"Total Model Load Time: {total_model_load_time}ms\n")
+            log.write(f"\n Number of frames: {no_of_frames} \n")
+            log.write(f"Face Detection Inference Time:{round((1000* face_detection_inference_time/no_of_frames),1)}ms\n")
+            log.write(f"Facial Landmarks Detection Inference Time:{round((1000* facial_landmark_inference_time/no_of_frames),1)}ms\n")
+            log.write(f"Headpose Estimation Inference Time:{round((1000* head_pose_inference_time/no_of_frames),1)}ms\n")
+            log.write(f"Gaze Estimation Inference Time:{round((1000* gaze_estimation_inference_time/no_of_frames),1)}ms\n")
+            log.write(f"Total time:{round((time.time() - start_inference_time), 1)}s\n")
         
+        print("<<<<<<<<<<<<<<< Application has finished running >>>>>>>>>>>>>>>>")
+        print("<<<<<<<<<<<<<<< Check logs.txt for statistics logs >>>>>>>>>>>>>>>>")
+
         # Release the capture and destroy any OpenCV windows
         cap.release()
         cv2.destroyAllWindows()
