@@ -6,6 +6,7 @@ import os
 import cv2
 import time
 import atexit
+import pprint
 import line_profiler
 from openvino.inference_engine import IECore
 # code source: https://github.com/vahiwe/Intel_Edge_Optimization_Exercises/blob/master/profiling.py
@@ -22,7 +23,7 @@ class FaceDetectionModel:
     Class for the Face Detection Model.
     '''
     # code source: https://github.com/vahiwe/Intel_Edge_Smart_Queuing_System/blob/master/Create_Python_Script.ipynb
-    def __init__(self, model_name, threshold = 0.5, device='CPU', extensions=None):
+    def __init__(self, model_name, perf_counts, visualize_outputs, threshold = 0.5, device='CPU', extensions=None):
         '''
         TODO: Use this to set your instance variables.
         '''
@@ -31,6 +32,8 @@ class FaceDetectionModel:
         self.device = device
         self.extensions = extensions
         self.threshold = threshold
+        self.perf_counts = perf_counts
+        self.visualize_outputs = visualize_outputs
         self.plugin = None
         self.network = None
 
@@ -60,7 +63,7 @@ class FaceDetectionModel:
 
     # code source: https://github.com/vahiwe/Intel_Edge_Smart_Queuing_System/blob/master/Create_Python_Script.ipynb
     @profile
-    def predict(self, image):
+    def predict(self, image, frame_number):
         '''
         TODO: You will need to complete this method.
         This method is meant for running predictions on the input image.
@@ -78,6 +81,12 @@ class FaceDetectionModel:
         # Retrieve output from the inference engine
         if self.network.requests[0].wait(-1) == 0:
             output = self.network.requests[0].outputs[self.output_name]
+        
+        # Log the time it takes for each layer in the model using the get_perf_counts API
+        if self.perf_counts and frame_number == 1:
+            with open("face_detection_perf_counts.txt", "w+") as perf_counts:
+                pp = pprint.PrettyPrinter(indent=4, stream=perf_counts)
+                pp.pprint(self.network.requests[0].get_perf_counts())
 
         # Get the coordinates of the face from the output
         face_coords = self.preprocess_output(output, image)
@@ -101,8 +110,10 @@ class FaceDetectionModel:
         # Create a copy of image
         frame_out = image.copy()
 
+        # If user enabled model ouput visualize
+        if self.visualize_outputs:
         # Draw bounding boxes around all detected faces
-        cv2.rectangle(frame_out, face_coord[:2], face_coord[2:], (0, 255, 0), 2)
+            cv2.rectangle(frame_out, face_coord[:2], face_coord[2:], (0, 255, 0), 2)
 
         # Return updated image
         return frame_out

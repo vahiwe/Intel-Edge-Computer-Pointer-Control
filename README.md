@@ -77,27 +77,52 @@ Below is a documentation of the arguments to the script:
 usage: main.py [-h] -fdm FACE_DETECTION_MODEL -flm FACIAL_LANDMARK_MODEL -gem
                GAZE_ESTIMATION_MODEL -hpem HEAD_POSE_ESTIMATION_MODEL
                [-d DEVICE] -v VIDEO [-l CPU_EXTENSION] [-pt THRESHOLD]
-               [--no_move] [--no_video]
+               [--perf_counts] [--toggle_video] [--visualize_outputs]
 
 optional arguments:
   -h, --help            show this help message and exit
   -fdm FACE_DETECTION_MODEL, --face_detection_model FACE_DETECTION_MODEL
-                        location of face detection model model to be used
+                        Location of Face Detection Model
   -flm FACIAL_LANDMARK_MODEL, --facial_landmark_model FACIAL_LANDMARK_MODEL
-                        location of facial landmark model to be used
+                        Location of Facial Landmark Model
   -gem GAZE_ESTIMATION_MODEL, --gaze_estimation_model GAZE_ESTIMATION_MODEL
-                        location of gaze estimation model to be used
+                        Location of Gaze Estimation Model
   -hpem HEAD_POSE_ESTIMATION_MODEL, --head_pose_estimation_model HEAD_POSE_ESTIMATION_MODEL
-                        location of head pose estimation model to be used
+                        Location of Head Pose Estimation Model
   -d DEVICE, --device DEVICE
                         device to run inference
   -v VIDEO, --video VIDEO
-                        video location
+                        Video or Image location. Use 'CAM' as input value to
+                        use webcam
   -l CPU_EXTENSION, --cpu_extension CPU_EXTENSION
-                        MKLDNN (CPU)-targeted custom layers.Absolute path to a
-                        shared library with thekernels impl.
+                        MKLDNN (CPU)-targeted custom layers. Absolute path to
+                        a shared library with the kernels implementation.
   -pt THRESHOLD, --threshold THRESHOLD
                         Probability threshold for model
+  --perf_counts         use the get_perf_counts API to log the time it takes
+                        for each layer in the models
+  --toggle_video        Allows user toggle video output by pressing Spacebar
+                        [Toggle Mode]
+  --visualize_outputs   Allows user to visualize model outputs on the frames
+```
+
+## Directory Structure
+Below is the directory structure of the project:
+```
+├── README.md
+├── bin
+│   └── demo.mp4
+├── main.py
+├── model_pipeline.png
+├── requirements.txt
+└── src
+    ├── face_detection.py
+    ├── facial_landmarks_detection.py
+    ├── gaze_estimation.py
+    ├── head_pose_estimation.py
+    ├── input_feeder.py
+    ├── model.py
+    └── mouse_controller.py
 ```
 
 ## Benchmarks
@@ -126,11 +151,17 @@ For further improvement of the application, one can use [Deep Learning Workbench
 
 __`❍ python3 -m line_profiler file_name.py.lprof `__
 
+* I used the `get_perf_counts` API to log the time it takes for each layer in the models. You can view `file_name_perf_counts.txt` to analyze more. You can enable it by using the `perf_counts` CLI argument.
+
+* There is a toggle mode that allows you toggle the video output by pressing Spacebar. You can enable it by using the `toggle_video` CLI argument.
+
 ### Edge Cases
 Some situations where inference may break are: 
 * `PyAutoGUI` fail-safe is triggered from mouse moving to a corner of the screen
 * `PyAutoGUI` control of the mouse was too slow, causing the frames to freeze and the application was slow
 * Application was crashing if no face was detected
+* If lighting is poor then the face might not be detected
+* If users face is not looking at the camera in a vertical position then the face might not be detected 
 
 To solve these issues, you have to:
 * Disable PyAutoGUI fail-safe. `pyautogui.FAILSAFE = False`

@@ -7,6 +7,7 @@ import cv2
 import time
 import math
 import atexit
+import pprint
 import line_profiler
 import numpy as np
 from openvino.inference_engine import IECore
@@ -24,7 +25,7 @@ class HeadPoseEstimationModel:
     Class for the Head Pose Estimation Model.
     '''
     # code source: https://github.com/vahiwe/Intel_Edge_Smart_Queuing_System/blob/master/Create_Python_Script.ipynb
-    def __init__(self, model_name, device='CPU', extensions=None):
+    def __init__(self, model_name, perf_counts, visualize_outputs, device='CPU', extensions=None):
         '''
         TODO: Use this to set your instance variables.
         '''
@@ -32,6 +33,8 @@ class HeadPoseEstimationModel:
         self.model_structure = model_name
         self.device = device
         self.extensions = extensions
+        self.perf_counts = perf_counts
+        self.visualize_outputs = visualize_outputs
         self.plugin = None
         self.network = None
 
@@ -64,7 +67,7 @@ class HeadPoseEstimationModel:
 
     # code source: https://github.com/vahiwe/Intel_Edge_Smart_Queuing_System/blob/master/Create_Python_Script.ipynb
     @profile
-    def predict(self, image, face_coord, out_frame):
+    def predict(self, image, face_coord, out_frame, frame_number):
         '''
         TODO: You will need to complete this method.
         This method is meant for running predictions on the input image.
@@ -85,6 +88,12 @@ class HeadPoseEstimationModel:
         # Retrieve output from the inference engine
         if self.network.requests[0].wait(-1) == 0:
             output = self.network.requests[0].outputs
+
+        # Log the time it takes for each layer in the model using the get_perf_counts API
+        if self.perf_counts and frame_number == 1:
+            with open("head_pose_perf_counts.txt", "w+") as perf_counts:
+                pp = pprint.PrettyPrinter(indent=4, stream=perf_counts)
+                pp.pprint(self.network.requests[0].get_perf_counts())
             
         # Get the head pose angles from the output
         angles = self.preprocess_output(output)
@@ -101,17 +110,19 @@ class HeadPoseEstimationModel:
         # Create a copy of image
         frame_out = image.copy()
 
-        # write the yaw, pitch and roll to the frame as text
-        cv2.putText(frame_out,"yaw:{:.1f}".format(angles[0]), (20,20), 0, 0.6, (255,255,0))
-        cv2.putText(frame_out,"pitch:{:.1f}".format(angles[1]), (20,40), 0, 0.6, (255,255,0))
-        cv2.putText(frame_out,"roll:{:.1f}".format(angles[2]), (20,60), 0, 0.6, (255,255,0))
-        
-        # visualize head pose 
-        xmin, ymin, xmax , ymax = face_coord
-        height = xmax - xmin 
-        width = ymax - ymin
-        face_center = (xmin + height / 2, ymin + width / 2, 0)
-        self.draw_axes(frame_out, face_center, angles[0], angles[1], angles[2])
+        # If user enabled model ouput visualize
+        if self.visualize_outputs:
+            # write the yaw, pitch and roll to the frame as text
+            cv2.putText(frame_out,"yaw:{:.1f}".format(angles[0]), (20,20), 0, 0.6, (255,255,0))
+            cv2.putText(frame_out,"pitch:{:.1f}".format(angles[1]), (20,40), 0, 0.6, (255,255,0))
+            cv2.putText(frame_out,"roll:{:.1f}".format(angles[2]), (20,60), 0, 0.6, (255,255,0))
+            
+            # visualize head pose 
+            xmin, ymin, xmax , ymax = face_coord
+            height = xmax - xmin 
+            width = ymax - ymin
+            face_center = (xmin + height / 2, ymin + width / 2, 0)
+            self.draw_axes(frame_out, face_center, angles[0], angles[1], angles[2])
 
         # Return updated image
         return frame_out

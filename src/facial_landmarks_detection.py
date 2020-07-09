@@ -6,6 +6,7 @@ import os
 import cv2
 import time
 import atexit
+import pprint
 import line_profiler
 from openvino.inference_engine import IECore
 # code source: https://github.com/vahiwe/Intel_Edge_Optimization_Exercises/blob/master/profiling.py
@@ -22,7 +23,7 @@ class FacialLandmarkDetectionModel:
     Class for the Facial Landmark Detection Model.
     '''
     # code source: https://github.com/vahiwe/Intel_Edge_Smart_Queuing_System/blob/master/Create_Python_Script.ipynb
-    def __init__(self, model_name, device='CPU', extensions=None):
+    def __init__(self, model_name, perf_counts, visualize_outputs, device='CPU', extensions=None):
         '''
         TODO: Use this to set your instance variables.
         '''
@@ -30,6 +31,8 @@ class FacialLandmarkDetectionModel:
         self.model_structure = model_name
         self.device = device
         self.extensions = extensions
+        self.perf_counts = perf_counts
+        self.visualize_outputs = visualize_outputs
         self.plugin = None
         self.network = None
 
@@ -59,7 +62,7 @@ class FacialLandmarkDetectionModel:
 
     # code source: https://github.com/vahiwe/Intel_Edge_Smart_Queuing_System/blob/master/Create_Python_Script.ipynb
     @profile
-    def predict(self, image, face_coord, out_frame):
+    def predict(self, image, face_coord, out_frame, frame_number):
         '''
         TODO: You will need to complete this method.
         This method is meant for running predictions on the input image.
@@ -83,6 +86,12 @@ class FacialLandmarkDetectionModel:
             # reshape output
             output = output.reshape(1, 10)[0]
 
+        # Log the time it takes for each layer in the model using the get_perf_counts API
+        if self.perf_counts and frame_number == 1:
+            with open("facial_landmarks_perf_counts.txt", "w+") as perf_counts:
+                pp = pprint.PrettyPrinter(indent=4, stream=perf_counts)
+                pp.pprint(self.network.requests[0].get_perf_counts())
+
         # Get the image of the left and right eye
         # Get the coordinates of the eyes from the output
         left_eye_image, right_eye_image, eye_coord = self.preprocess_output(output, face_coord, face)
@@ -100,21 +109,23 @@ class FacialLandmarkDetectionModel:
         # Create a copy of image
         frame_out = image.copy()
 
-        # height and width of face 
-        height = face_coord[3]-face_coord[1] 
-        width = face_coord[2]-face_coord[0]
+        # If user enabled model ouput visualize
+        if self.visualize_outputs:
+            # height and width of face 
+            height = face_coord[3]-face_coord[1] 
+            width = face_coord[2]-face_coord[0]
 
-        # draw circles round the eyes
-        for i in range(2):
-            x = int(outputs[i*2] * width)
-            y = int(outputs[i*2+1] * height)
-            cv2.circle(frame_out, (face_coord[0]+x, face_coord[1]+y), 30, (0,255,i*255), 2)
-        
-        # Draw left eye image at the top left hand corner of frame
-        frame_out[150:150+left_eye_image.shape[0],20:20+left_eye_image.shape[1]] = left_eye_image
+            # draw circles round the eyes
+            for i in range(2):
+                x = int(outputs[i*2] * width)
+                y = int(outputs[i*2+1] * height)
+                cv2.circle(frame_out, (face_coord[0]+x, face_coord[1]+y), 30, (0,255,i*255), 2)
+            
+            # Draw left eye image at the top left hand corner of frame
+            frame_out[150:150+left_eye_image.shape[0],20:20+left_eye_image.shape[1]] = left_eye_image
 
-        # Draw right eye image at the top left hand corner of frame
-        frame_out[150:150+right_eye_image.shape[0],100:100+right_eye_image.shape[1]] = right_eye_image
+            # Draw right eye image at the top left hand corner of frame
+            frame_out[150:150+right_eye_image.shape[0],100:100+right_eye_image.shape[1]] = right_eye_image
         
         # Return updated image
         return frame_out

@@ -7,6 +7,7 @@ import cv2
 import time
 import math
 import atexit
+import pprint
 import line_profiler
 from openvino.inference_engine import IECore
 # code source: https://github.com/vahiwe/Intel_Edge_Optimization_Exercises/blob/master/profiling.py
@@ -23,7 +24,7 @@ class GazeEstimationModel:
     Class for the Gaze Estimation Model.
     '''
     # code source: https://github.com/vahiwe/Intel_Edge_Smart_Queuing_System/blob/master/Create_Python_Script.ipynb
-    def __init__(self, model_name, device='CPU', extensions=None):
+    def __init__(self, model_name, perf_counts, visualize_outputs, device='CPU', extensions=None):
         '''
         TODO: Use this to set your instance variables.
         '''
@@ -31,6 +32,8 @@ class GazeEstimationModel:
         self.model_structure = model_name
         self.device = device
         self.extensions = extensions
+        self.perf_counts = perf_counts
+        self.visualize_outputs = visualize_outputs
         self.plugin = None
         self.network = None
 
@@ -60,7 +63,7 @@ class GazeEstimationModel:
 
     # code source: https://github.com/vahiwe/Intel_Edge_Smart_Queuing_System/blob/master/Create_Python_Script.ipynb
     @profile
-    def predict(self, left_eye_image, right_eye_image, headpose_angles, eye_coord, out_frame):
+    def predict(self, left_eye_image, right_eye_image, headpose_angles, eye_coord, out_frame, frame_number):
         '''
         TODO: You will need to complete this method.
         This method is meant for running predictions on the input image.
@@ -79,6 +82,12 @@ class GazeEstimationModel:
         if self.network.requests[0].wait(-1) == 0:
             output = self.network.requests[0].outputs[self.output_name]
 
+        # Log the time it takes for each layer in the model using the get_perf_counts API
+        if self.perf_counts and frame_number == 1:
+            with open("gaze_estimation_perf_counts.txt", "w+") as perf_counts:
+                pp = pprint.PrettyPrinter(indent=4, stream=perf_counts)
+                pp.pprint(self.network.requests[0].get_perf_counts())
+
         # Get the mouse coordinates and gaze vextor from the output
         gaze_vector = self.preprocess_output(output)
         
@@ -95,12 +104,14 @@ class GazeEstimationModel:
         # Create a copy of image
         frame_out = image.copy()
 
-        # Write the gaze vextor values to the frame
-        cv2.putText(frame_out,"x:"+str('{:.1f}'.format(gaze_vector[0]*100))+",y:"+str('{:.1f}'.format(gaze_vector[1]*100))+",z:"+str('{:.1f}'.format(gaze_vector[2])) , (20, 100), 0,0.6, (0,0,255), 1)
+        # If user enabled model ouput visualize
+        if self.visualize_outputs:
+            # Write the gaze vextor values to the frame
+            cv2.putText(frame_out,"x:"+str('{:.1f}'.format(gaze_vector[0]*100))+",y:"+str('{:.1f}'.format(gaze_vector[1]*100))+",z:"+str('{:.1f}'.format(gaze_vector[2])) , (20, 100), 0,0.6, (0,0,255), 1)
 
-        # Draw an arrow showing the gaze direction for the two eyes
-        cv2.arrowedLine(frame_out, (int(eye_coord['left_eye'][0]),int(eye_coord['left_eye'][1])), (int(eye_coord['left_eye'][0]) + int(gaze_vector[0]*100), int(eye_coord['left_eye'][1]) + int(-gaze_vector[1]*100)), (255, 100, 100), 5)
-        cv2.arrowedLine(frame_out, (int(eye_coord['right_eye'][0]),int(eye_coord['right_eye'][1])), (int(eye_coord['right_eye'][0]) + int(gaze_vector[0]*100),int(eye_coord['right_eye'][1]) + int(-gaze_vector[1]*100)), (255,100, 100), 5)
+            # Draw an arrow showing the gaze direction for the two eyes
+            cv2.arrowedLine(frame_out, (int(eye_coord['left_eye'][0]),int(eye_coord['left_eye'][1])), (int(eye_coord['left_eye'][0]) + int(gaze_vector[0]*100), int(eye_coord['left_eye'][1]) + int(-gaze_vector[1]*100)), (255, 100, 100), 5)
+            cv2.arrowedLine(frame_out, (int(eye_coord['right_eye'][0]),int(eye_coord['right_eye'][1])), (int(eye_coord['right_eye'][0]) + int(gaze_vector[0]*100),int(eye_coord['right_eye'][1]) + int(-gaze_vector[1]*100)), (255,100, 100), 5)
         
         # Return updated image
         return frame_out

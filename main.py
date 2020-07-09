@@ -1,4 +1,4 @@
-"""People Counter."""
+"""Computer Pointer Controller"""
 """
  Copyright (c) 2018 Intel Corporation.
  Permission is hereby granted, free of charge, to any person obtaining
@@ -50,12 +50,19 @@ def main(args):
     mouse_controller = MouseController("higher", "faster")
 
     # code source: https://github.com/vahiwe/Intel_Edge_Smart_Queuing_System/blob/master/Create_Python_Script.ipynb
-    # Initialise models instance and video input
-    face_detection_model = FaceDetectionModel(args.face_detection_model)
-    facial_landmark_model = FacialLandmarkDetectionModel(args.facial_landmark_model)
-    head_pose_model = HeadPoseEstimationModel(args.head_pose_estimation_model)
-    gaze_estimation_model = GazeEstimationModel(args.gaze_estimation_model)
+    # Initialise models instance, video input and other arguments
     video_file = args.video
+    perf_counts = args.perf_counts
+    toggle_video = args.toggle_video
+    visualize_outputs = args.visualize_outputs
+    device = args.device
+    threshold = args.threshold
+    cpu_extension = args.cpu_extension
+    face_detection_model = FaceDetectionModel(args.face_detection_model, perf_counts, visualize_outputs, threshold, device, cpu_extension)
+    facial_landmark_model = FacialLandmarkDetectionModel(args.facial_landmark_model, perf_counts, visualize_outputs, device, cpu_extension)
+    head_pose_model = HeadPoseEstimationModel(args.head_pose_estimation_model, perf_counts, visualize_outputs, device, cpu_extension)
+    gaze_estimation_model = GazeEstimationModel(args.gaze_estimation_model, perf_counts, visualize_outputs, device, cpu_extension)
+    
 
     # Start time for loading models
     model_load_start_time = time.time()
@@ -87,7 +94,8 @@ def main(args):
     # Calculate total models load time
     # Convert the time from seconds to milliseconds(ms) and round to 1 decimal place
     total_model_load_time = round((1000 * (time.time() - model_load_start_time)), 1)
-    
+
+    # Check input Type, If video, image or webcam 
     # Checks for live feed
     if video_file == 'CAM':
         input_stream = 0
@@ -113,6 +121,9 @@ def main(args):
     if input_stream:
         cap.open(input_stream)
 
+    if toggle_video and not single_image_mode:
+        print("You can toggle the video output by clicking on the video frame once and pressing Spacebar to show/hide the window")
+
     # code source: https://github.com/vahiwe/Intel_Edge_Smart_Queuing_System/blob/master/Create_Python_Script.ipynb
     no_of_frames=0
     face_detection_inference_time = 0
@@ -120,6 +131,7 @@ def main(args):
     head_pose_inference_time = 0
     gaze_estimation_inference_time = 0
     start_inference_time = time.time()
+    show_video = True
 
     # code source: https://github.com/vahiwe/Intel_Edge_Smart_Queuing_System/blob/master/Create_Python_Script.ipynb
     try:
@@ -134,7 +146,7 @@ def main(args):
             no_of_frames += 1
             
             # face detection inference
-            face_coord, out_frame, inference_time = face_detection_model.predict(frame) 
+            face_coord, out_frame, inference_time = face_detection_model.predict(frame, no_of_frames) 
 
             # Check if face was detected or not
             # This was added to prevent application from crashing if face is detected
@@ -146,19 +158,19 @@ def main(args):
             face_detection_inference_time += inference_time
 
             # face landmarks inference
-            out_frame,left_eye_image,right_eye_image, eye_coord, inference_time = facial_landmark_model.predict(frame, face_coord, out_frame)
+            out_frame,left_eye_image,right_eye_image, eye_coord, inference_time = facial_landmark_model.predict(frame, face_coord, out_frame, no_of_frames)
             
             # calculate total inference time of facial landmarks model
             facial_landmark_inference_time += inference_time
 
             # head pose estimation inference
-            out_frame, headpose_angles, inference_time = head_pose_model.predict(frame, face_coord, out_frame)
+            out_frame, headpose_angles, inference_time = head_pose_model.predict(frame, face_coord, out_frame, no_of_frames)
             
             # calculate total inference time of head pose estimation model
             head_pose_inference_time += inference_time
 
             # gaze estimation inference
-            out_frame, gaze_vector, inference_time  = gaze_estimation_model.predict(left_eye_image, right_eye_image, headpose_angles, eye_coord, out_frame)
+            out_frame, gaze_vector, inference_time  = gaze_estimation_model.predict(left_eye_image, right_eye_image, headpose_angles, eye_coord, out_frame, no_of_frames)
             
             # calculate total inference time of gaze estimation model
             gaze_estimation_inference_time += inference_time
@@ -167,9 +179,10 @@ def main(args):
             if single_image_mode:
                 cv2.imwrite('output_image.jpg', out_frame)
             else:
-                cv2.imshow('Mouse Pointer Control', out_frame)
-                if cv2.waitKey(1) & 0xFF == ord('q'):
-                    break
+                if show_video:
+                    cv2.imshow('Mouse Pointer Control', out_frame)
+                    if cv2.waitKey(1) & 0xFF == ord('q'):
+                        break
             
             # Move cursor based on gaze inference output
             mouse_controller.move(gaze_vector[0],gaze_vector[1])
@@ -177,6 +190,19 @@ def main(args):
             # Break if escape key pressed
             if key_pressed == 27:
                 break
+
+            # Allows user toggle video output
+            if toggle_video:
+                # Press spacebar to start/stop showing frames
+                key = cv2.waitKey(60)
+                if key == 32:
+                    if show_video:
+                        show_video = False
+                        cv2.destroyAllWindows()
+                        print('Stop showing frames')
+                    else:
+                        show_video = True
+                        print('Start showing frames')
 
         # code source: https://github.com/vahiwe/Intel_Edge_Smart_Queuing_System/blob/master/Create_Python_Script.ipynb
         # Log statistics such as model load time and inference time of the different models in logs.txt
@@ -196,6 +222,8 @@ def main(args):
         print("<<<<<<<<<<<<<<< Application has finished running >>>>>>>>>>>>>>>>")
         print("<<<<<<<<<<<<<<< Check logs.txt for statistics logs >>>>>>>>>>>>>>>>")
         print("<<<<< To check profiling stats for hotspot, type this command `python3 -m line_profiler file_name.py.lprof` for any of the profile outputs >>>>>")
+        if perf_counts:
+            print("<<<<< You can view model layer perfomance time by viewing file_name_perf_counts.txt >>>>>")
 
         # Release the capture and destroy any OpenCV windows
         cap.release()
@@ -207,16 +235,22 @@ def main(args):
 if __name__ == '__main__':
     # Parse command line arguments
     parser = ArgumentParser()
-    parser.add_argument("-fdm", '--face_detection_model', type=str, required=True, default="models/intel/face-detection-adas-binary-0001/FP32-INT1/face-detection-adas-binary-0001", help="location of face detection model model to be used")
-    parser.add_argument("-flm", '--facial_landmark_model', type=str, required=True, default="models/intel/landmarks-regression-retail-0009/FP16/landmarks-regression-retail-0009", help="location of facial landmark model to be used")
-    parser.add_argument("-gem", '--gaze_estimation_model', type=str, required=True, default="models/intel/gaze-estimation-adas-0002/FP16/gaze-estimation-adas-0002", help="location of gaze estimation model to be used")
-    parser.add_argument("-hpem", '--head_pose_estimation_model', type=str, required=True, default="models/intel/head-pose-estimation-adas-0001/FP16/head-pose-estimation-adas-0001", help="location of head pose estimation model to be used")
+    parser.add_argument("-fdm", '--face_detection_model', type=str, required=True, default="models/intel/face-detection-adas-binary-0001/FP32-INT1/face-detection-adas-binary-0001", help="Location of Face Detection Model")
+    parser.add_argument("-flm", '--facial_landmark_model', type=str, required=True, default="models/intel/landmarks-regression-retail-0009/FP16/landmarks-regression-retail-0009", help="Location of Facial Landmark Model")
+    parser.add_argument("-gem", '--gaze_estimation_model', type=str, required=True, default="models/intel/gaze-estimation-adas-0002/FP16/gaze-estimation-adas-0002", help="Location of Gaze Estimation Model")
+    parser.add_argument("-hpem", '--head_pose_estimation_model', type=str, required=True, default="models/intel/head-pose-estimation-adas-0001/FP16/head-pose-estimation-adas-0001", help="Location of Head Pose Estimation Model")
     parser.add_argument("-d", '--device', type=str, default='CPU', help="device to run inference")
-    parser.add_argument("-v", '--video',type=str, required=True, default="bin/demo.mp4", help="video location")
-    parser.add_argument("-l", '--cpu_extension', type=str, required=False, default=None, help="MKLDNN (CPU)-targeted custom layers."
-                             "Absolute path to a shared library with the"
-                             "kernels impl.")
-    parser.add_argument("-pt", '--threshold', type=float, default=0.60, help="Probability threshold for model")
+    parser.add_argument("-v", '--video',type=str, required=True, default="bin/demo.mp4", help="Video or Image location. Use 'CAM' as input value to use webcam")
+    parser.add_argument("-l", '--cpu_extension', type=str, required=False, default=None, help="MKLDNN (CPU)-targeted custom layers. "
+                             "Absolute path to a shared library with the "
+                             "kernels implementation.")
+    parser.add_argument("-pt", '--threshold', type=float, default=0.50, help="Probability threshold for model")
+    parser.add_argument("--perf_counts", help="use the get_perf_counts API to log the time it takes for each layer in the models",
+                    action="store_true")
+    parser.add_argument("--toggle_video", help="Allows user toggle video output by pressing Spacebar [Toggle Mode]",
+                    action="store_true")
+    parser.add_argument("--visualize_outputs", help="Allows user to visualize model outputs on the frames",
+                    action="store_true")
 
     args=parser.parse_args()
 

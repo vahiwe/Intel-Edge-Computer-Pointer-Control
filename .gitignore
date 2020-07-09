@@ -29,6 +29,7 @@ MANIFEST
 .vscode/
 models/
 logs.txt
+*perf_counts.txt
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
