@@ -132,6 +132,7 @@ def main(args):
     gaze_estimation_inference_time = 0
     start_inference_time = time.time()
     show_video = True
+    show_only_outputs = False
 
     # code source: https://github.com/vahiwe/Intel_Edge_Smart_Queuing_System/blob/master/Create_Python_Script.ipynb
     try:
@@ -146,7 +147,7 @@ def main(args):
             no_of_frames += 1
             
             # face detection inference
-            face_coord, out_frame, inference_time = face_detection_model.predict(frame, no_of_frames) 
+            face_coord, out_frame, inference_time = face_detection_model.predict(frame, no_of_frames, show_only_outputs)
 
             # Check if face was detected or not
             # This was added to prevent application from crashing if face is detected
@@ -191,18 +192,31 @@ def main(args):
             if key_pressed == 27:
                 break
 
-            # Allows user toggle video output
-            if toggle_video:
-                # Press spacebar to start/stop showing frames
+            
+            # Allows user toggle video output or toggle showing only outputs
+            if toggle_video or visualize_outputs:
+                # Get key input
                 key = cv2.waitKey(60)
-                if key == 32:
-                    if show_video:
-                        show_video = False
-                        cv2.destroyAllWindows()
-                        print('Stop showing frames')
-                    else:
-                        show_video = True
-                        print('Start showing frames')
+                # Press spacebar to start/stop showing frames
+                if toggle_video:
+                    if key == 32:
+                        if show_video:
+                            show_video = False
+                            cv2.destroyAllWindows()
+                            print('Stop showing frames')
+                        else:
+                            show_video = True
+                            print('Start showing frames')
+                    
+                # Press o to start/stop showing only outputs
+                if visualize_outputs:
+                    if key == ord("o"):
+                        if show_only_outputs:
+                            show_only_outputs = False
+                            print('Show only outputs')
+                        else:
+                            show_only_outputs = True
+                            print('Show both video and model outputs')
 
         # code source: https://github.com/vahiwe/Intel_Edge_Smart_Queuing_System/blob/master/Create_Python_Script.ipynb
         # Log statistics such as model load time and inference time of the different models in logs.txt
@@ -249,7 +263,7 @@ if __name__ == '__main__':
                     action="store_true")
     parser.add_argument("--toggle_video", help="Allows user toggle video output by pressing Spacebar [Toggle Mode]",
                     action="store_true")
-    parser.add_argument("--visualize_outputs", help="Allows user to visualize model outputs on the frames",
+    parser.add_argument("--visualize_outputs", help="Allows user to visualize model outputs on the frames. It also allows user toggle model output by pressing 'o' [Output Toggle Mode]",
                     action="store_true")
 
     args=parser.parse_args()

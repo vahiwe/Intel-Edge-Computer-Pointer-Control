@@ -63,7 +63,7 @@ class FaceDetectionModel:
 
     # code source: https://github.com/vahiwe/Intel_Edge_Smart_Queuing_System/blob/master/Create_Python_Script.ipynb
     @profile
-    def predict(self, image, frame_number):
+    def predict(self, image, frame_number, show_only_outputs):
         '''
         TODO: You will need to complete this method.
         This method is meant for running predictions on the input image.
@@ -97,7 +97,7 @@ class FaceDetectionModel:
             face_coord = face_coords[0]
 
             # Draw a bounding box around the face on the frame
-            image = self.draw_outputs(face_coord, image)
+            image = self.draw_outputs(face_coord, image, show_only_outputs)
         else:
             face_coord = []
 
@@ -106,9 +106,13 @@ class FaceDetectionModel:
 
     # code source: https://github.com/vahiwe/Intel_Edge_Smart_Queuing_System/blob/master/Create_Python_Script.ipynb
     @profile
-    def draw_outputs(self, face_coord, image):
+    def draw_outputs(self, face_coord, image, show_only_outputs):
         # Create a copy of image
         frame_out = image.copy()
+
+        # Draw only outputs on frame with white background
+        if show_only_outputs and self.visualize_outputs:
+            cv2.rectangle(frame_out, (0, 0), (image.shape[1], image.shape[0]), (255, 255, 255), -1)
 
         # If user enabled model ouput visualize
         if self.visualize_outputs:

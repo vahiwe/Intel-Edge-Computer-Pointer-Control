@@ -103,7 +103,9 @@ optional arguments:
                         for each layer in the models
   --toggle_video        Allows user toggle video output by pressing Spacebar
                         [Toggle Mode]
-  --visualize_outputs   Allows user to visualize model outputs on the frames
+  --visualize_outputs   Allows user to visualize model outputs on the frames.
+                        It also allows user toggle model output by pressing
+                        'o' [Output Toggle Mode]
 ```
 
 ## Directory Structure
@@ -153,7 +155,9 @@ __`❍ python3 -m line_profiler file_name.py.lprof `__
 
 * I used the `get_perf_counts` API to log the time it takes for each layer in the models. You can view `file_name_perf_counts.txt` to analyze more. You can enable it by using the `perf_counts` CLI argument.
 
-* There is a toggle mode that allows you toggle the video output by pressing Spacebar. You can enable it by using the `toggle_video` CLI argument.
+* There is a toggle mode that allows you toggle the video output by pressing Spacebar. You can enable it by using the `toggle_video` CLI argument. This increases the total run time of the application.
+
+* There is a toggle mode that allows you toggle the model output by pressing `o`. You can enable it by using the `visualize_outputs` CLI argument. This increases the total run time of the application.
 
 ### Edge Cases
 Some situations where inference may break are: 
