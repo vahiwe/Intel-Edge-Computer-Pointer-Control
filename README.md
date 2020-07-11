@@ -4,6 +4,10 @@ This application is a smart IoT solution that uses the Intel® OpenVINO™ softw
 
 ![model pipeline](model_pipeline.png)
 
+Below is a video output from the project:
+
+![Giphy of output](Computer_Pointer_Controller.gif)
+
 ## Project Set Up and Installation
 To Setup this project, you need to follow the following steps:
 
